@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍅 农价天眼 · 智能农产品行情</title>
+    <!-- Bootstrap 5 样式 (明亮主题) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <!-- 字体图标 (Font Awesome 简洁风格) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        .dashboard-card {
+            border-radius: 24px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 15px 35px -15px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+        }
+        .stat-card {
+            border-radius: 20px;
+            background: white;
+            border: none;
+            box-shadow: 0 8px 20px rgba(0,32,64,0.08);
+            transition: all 0.2s;
+        }
+        .stat-card .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(40,167,69,0.1);
+            color: #28a745;
+            font-size: 1.6rem;
+        }
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.8rem;
+            line-height: 1.2;
+            color: #1a2b3c;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 24px;
+            background: white;
+            padding: 20px;
+        }
+        .control-panel {
+            background: white;
+            border-radius: 40px;
+            padding: 12px 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .badge-soft-success {
+            background: #e6f7e6;
+            color: #1e7e34;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 30px;
+        }
+        .btn-outline-green {
+            border: 1px solid #28a745;
+            color: #28a745;
+            border-radius: 40px;
+            padding: 8px 22px;
+            font-weight: 500;
+        }
+        .btn-outline-green:hover {
+            background: #28a745;
+            color: white;
+        }
+        footer {
+            color: #adb5bd;
+            font-size: 0.85rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="container-lg py-4">
+    <!-- 标题区 + 品牌标识 -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-success bg-opacity-10 p-3 rounded-4">
+                <i class="fas fa-seedling text-success fs-1"></i>
+            </div>
+            <div>
+                <h1 class="display-6 fw-bold mb-0" style="color: #1a3b2e;">农价天眼</h1>
+                <p class="text-muted mb-0"><i class="far fa-clock me-1"></i> 实时农产品行情 · 智绘价格趋势</p>
+            </div>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <span class="badge-soft-success"><i class="fas fa-database me-1"></i> 数据源 · 新发地批发市场</span>
+        </div>
+    </div>
+
+    <!-- 控制卡: 产品选择 + 天数滑动 (简洁) -->
+    <div class="dashboard-card p-4 mb-4">
+        <div class="row g-4 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-semibold text-secondary"><i class="fas fa-apple-alt me-1"></i> 选择产品</label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-success"></i></span>
+                    <select class="form-select form-select-lg border-start-0 ps-0" id="productSelect">
+                        <!-- 动态加载产品列表，默认番茄 -->
+                        <option value="番茄" selected>番茄</option>
+                        <!-- 更多产品将由API填充 -->
+                    </select>
+                </div>
+                <small class="text-muted mt-1"><i class="far fa-lightbulb"></i> 产品列表从数据库自动加载</small>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label fw-semibold text-secondary"><i class="fas fa-calendar-alt me-1"></i> 回溯天数</label>
+                <div class="d-flex align-items-center gap-3">
+                    <input type="range" class="form-range" min="7" max="90" value="30" step="1" id="daysRange">
+                    <span class="badge bg-light text-dark fs-6 px-4 py-2 rounded-pill" id="daysValue">30 天</span>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-green w-100 py-3" id="refreshBtn">
+                    <i class="fas fa-chart-line me-2"></i> 更新图表
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 核心统计数据卡片 (动态更新) -->
+    <div class="row g-4 mb-4">
+        <div class="col-sm-4">
+            <div class="stat-card p-3 d-flex align-items-center gap-3">
+                <div class="stat-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div>
+                    <div class="stat-label">平均价格 (元)</div>
+                    <div class="stat-value" id="avgPrice">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card p-3 d-flex align-items-center gap-3">
+                <div class="stat-icon" style="background: rgba(255,193,7,0.1); color:#ffc107;">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+                <div>
+                    <div class="stat-label">最高价格</div>
+                    <div class="stat-value" id="maxPrice">—</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="stat-card p-3 d-flex align-items-center gap-3">
+                <div class="stat-icon" style="background: rgba(23,162,184,0.1); color:#17a2b8;">
+                    <i class="fas fa-arrow-down"></i>
+                </div>
+                <div>
+                    <div class="stat-label">最低价格</div>
+                    <div class="stat-value" id="minPrice">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表区域 + 可选图表类型切换 (简洁) -->
+    <div class="dashboard-card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+            <div>
+                <span class="fw-bold fs-5"><i class="fas fa-chart-area text-success me-2"></i>价格趋势曲线</span>
+                <span class="ms-2 text-muted" id="chartSubtitle">番茄 · 近30天</span>
+            </div>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="chartType" id="lineChart" value="line" checked>
+                <label class="btn btn-outline-secondary btn-sm" for="lineChart"><i class="fas fa-chart-line"></i> 折线</label>
+                <input type="radio" class="btn-check" name="chartType" id="barChart" value="bar">
+                <label class="btn btn-outline-secondary btn-sm" for="barChart"><i class="fas fa-chart-bar"></i> 柱状</label>
+            </div>
+        </div>
+        <div id="mainChart" class="chart-container"></div>
+    </div>
+
+    <!-- 加载指示器 & 错误信息 -->
+    <div id="loadingOverlay" class="text-center my-3" style="display: none;">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="text-muted mt-2">正在获取最新行情...</p>
+    </div>
+    <div id="errorMessage" class="alert alert-warning alert-dismissible fade show d-none" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <span id="errorText"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <footer class="text-center">
+        <i class="far fa-heart text-danger"></i> 数据每小时更新 · 农价天眼 · 让信息更透明
+    </footer>
+</div>
+
+<!-- Bootstrap JS (用于关闭 alert 和按钮交互) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    (function() {
+        // 初始化 echarts 实例
+        let chart = echarts.init(document.getElementById('mainChart'));
+
+        // 获取 DOM 元素
+        const productSelect = document.getElementById('productSelect');
+        const daysRange = document.getElementById('daysRange');
+        const daysValue = document.getElementById('daysValue');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const avgPriceEl = document.getElementById('avgPrice');
+        const maxPriceEl = document.getElementById('maxPrice');
+        const minPriceEl = document.getElementById('minPrice');
+        const chartSubtitle = document.getElementById('chartSubtitle');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const errorMsgDiv = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const chartTypeRadios = document.querySelectorAll('input[name="chartType"]');
+
+        // 更新天数显示
+        function updateDaysLabel() {
+            daysValue.innerText = daysRange.value + ' 天';
+        }
+        daysRange.addEventListener('input', updateDaysLabel);
+        updateDaysLabel();
+
+        // 隐藏错误提示
+        function hideError() {
+            errorMsgDiv.classList.add('d-none');
+        }
+
+        // 显示错误
+        function showError(msg) {
+            errorText.innerText = msg;
+            errorMsgDiv.classList.remove('d-none');
+        }
+
+        // 加载产品列表 (建议后端添加 /api/products 接口)
+        function loadProductList() {
+            fetch('http://127.0.0.1:5000/api/products')
+                .then(res => res.json())
+                .then(products => {
+                    // 清空并填充下拉框
+                    productSelect.innerHTML = '';
+                    products.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        if (name === '番茄') option.selected = true;
+                        productSelect.appendChild(option);
+                    });
+                })
+                .catch(err => {
+                    console.warn('无法加载产品列表, 使用默认选项', err);
+                    // 如果接口不存在，保留原有番茄选项，可以添加一些常用备选
+                    const fallback = ['番茄', '黄瓜', '土豆', '白菜', '青椒'];
+                    productSelect.innerHTML = '';
+                    fallback.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        if (name === '番茄') option.selected = true;
+                        productSelect.appendChild(option);
+                    });
+                });
+        }
+
+        // 获取当前图表类型
+        function getCurrentChartType() {
+            for (let radio of chartTypeRadios) {
+                if (radio.checked) return radio.value;
+            }
+            return 'line';
+        }
+
+        // 渲染图表 (核心)
+        function fetchAndRender() {
+            const product = productSelect.value;
+            const days = daysRange.value;
+            const url = `http://127.0.0.1:5000/api/trend?product=${encodeURIComponent(product)}&days=${days}`;
+
+            // 显示加载，隐藏旧错误
+            loadingOverlay.style.display = 'block';
+            hideError();
+
+            // 更新副标题
+            chartSubtitle.innerText = `${product} · 近${days}天`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    loadingOverlay.style.display = 'none';
+
+                    if (data.error) {
+                        showError(data.error + ' 请尝试其他产品或检查数据源。');
+                        // 清空统计
+                        avgPriceEl.innerText = '—';
+                        maxPriceEl.innerText = '—';
+                        minPriceEl.innerText = '—';
+                        chart.setOption({ series: [] }); // 清空图表
+                        return;
+                    }
+
+                    // 计算统计值
+                    const prices = data.prices;
+                    if (prices.length > 0) {
+                        const avg = (prices.reduce((a,b) => a + b, 0) / prices.length).toFixed(2);
+                        const max = Math.max(...prices).toFixed(2);
+                        const min = Math.min(...prices).toFixed(2);
+                        avgPriceEl.innerText = avg;
+                        maxPriceEl.innerText = max;
+                        minPriceEl.innerText = min;
+                    } else {
+                        avgPriceEl.innerText = '—';
+                        maxPriceEl.innerText = '—';
+                        minPriceEl.innerText = '—';
+                    }
+
+                    // 准备图表配置
+                    const chartType = getCurrentChartType();
+                    const option = {
+                        title: { show: false },
+                        tooltip: { trigger: 'axis', valueFormatter: (v) => v + ' 元' },
+                        grid: { left: '5%', right: '5%', bottom: '10%', top: '10%', containLabel: true },
+                        xAxis: {
+                            type: 'category',
+                            data: data.dates,
+                            axisLabel: { rotate: 30, fontWeight: 400, fontSize: 11 }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: '元/公斤',
+                            nameStyle: { fontWeight: 500 },
+                            axisLabel: { fontSize: 11 }
+                        },
+                        series: [{
+                            data: data.prices,
+                            type: chartType,
+                            smooth: true,
+                            symbol: 'circle',
+                            symbolSize: 6,
+                            lineStyle: { width: 3, color: '#28a745' },
+                            areaStyle: chartType === 'line' ? { color: 'rgba(40,167,69,0.1)' } : undefined,
+                            itemStyle: chartType === 'bar' ? { color: '#28a745', borderRadius: [6,6,0,0] } : undefined,
+                            barWidth: '60%'
+                        }]
+                    };
+                    chart.setOption(option);
+                })
+                .catch(err => {
+                    loadingOverlay.style.display = 'none';
+                    showError('网络错误或服务器无响应: ' + err.message);
+                    console.error(err);
+                });
+        }
+
+        // 监听按钮点击和图表类型变化
+        refreshBtn.addEventListener('click', fetchAndRender);
+        chartTypeRadios.forEach(radio => {
+            radio.addEventListener('change', fetchAndRender);
+        });
+
+        // 页面加载后先加载产品列表，然后渲染默认图表
+        loadProductList();
+        setTimeout(() => fetchAndRender(), 100); // 稍微延迟确保下拉框填充
+
+        // 响应窗口大小变化，重绘图表
+        window.addEventListener('resize', () => chart.resize());
+    })();
+</script>
+
+<!-- 如果需要支持产品列表API，请在后端添加以下蓝图：
+@trend_bp.route('/products')
+def list_products():
+    import pandas as pd
+    from extensions import engine
+    df = pd.read_sql("SELECT name FROM products ORDER BY name", engine)
+    return jsonify(df['name'].tolist())
+-->
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍊 欢迎回到农场 · 农价天眼</title>
+    <style>
+        /* ---------- 全局样式 ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            background-color: #E8F5E9;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 5%;
+        }
+
+        /* ---------- 漂浮蔬菜容器 ---------- */
+        .veg-garden {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 让蔬菜可以被点击，但为了互动，我们需要允许指针事件 */
+            z-index: 1;
+        }
+
+        /* 每个蔬菜都是可互动的 */
+        .veg-item {
+            position: absolute;
+            pointer-events: auto;  /* 允许鼠标事件 */
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s;
+            animation: float 6s infinite ease-in-out;
+            filter: drop-shadow(0 10px 5px rgba(0,0,0,0.1));
+        }
+
+        /* 鼠标悬停效果：变大、变亮、稍微旋转 */
+        .veg-item:hover {
+            transform: scale(1.2) rotate(2deg);
+            filter: drop-shadow(0 15px 8px rgba(0,0,0,0.15)) brightness(1.1);
+            animation-duration: 3s; /* 加速浮动，显得更兴奋 */
+        }
+
+        /* 浮动动画 */
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-25px) rotate(3deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        /* ---------- 蔬菜绘制 (纯CSS) ---------- */
+
+
+
+        /* 青椒：绿色灯笼椒 */
+        .bellpepper {
+            width: 60px;
+            height: 60px;
+            background: #4CAF50;
+            border-radius: 45% 45% 35% 35%;
+            position: relative;
+            box-shadow: 0 6px 0 #2E7D32;
+            transform: rotate(5deg);
+        }
+        .bellpepper::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 20px;
+            width: 20px;
+            height: 15px;
+            background: #2E7D32;
+            border-radius: 30% 30% 0 0;
+            transform: rotate(5deg);
+        }
+        .bellpepper::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 25px;
+            width: 8px;
+            height: 12px;
+            background: #1B5E20;
+            border-radius: 2px;
+        }
+
+        /* 南瓜：橙色扁圆 + 蒂 */
+        .pumpkin {
+            width: 70px;
+            height: 55px;
+            background: #FFB74D;
+            border-radius: 50% 50% 40% 40%;
+            position: relative;
+            box-shadow: 0 8px 0 #F57C00;
+        }
+        .pumpkin::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 30px;
+            width: 15px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 30% 30% 0 0;
+            transform: rotate(5deg);
+        }
+        .pumpkin::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 32px;
+            width: 4px;
+            height: 12px;
+            background: #2E7D32;
+            border-radius: 2px;
+        }
+        /* 南瓜棱纹 */
+        .pumpkin .ridge1, .pumpkin .ridge2 {
+            position: absolute;
+            width: 8px;
+            height: 40px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 40%;
+            top: 8px;
+        }
+        .pumpkin .ridge1 { left: 20px; transform: rotate(5deg); }
+        .pumpkin .ridge2 { right: 20px; transform: rotate(-5deg); }
+
+        /* 玉米：黄色玉米粒 + 绿色外皮 */
+        .corn {
+            width: 45px;
+            height: 70px;
+            background: #FFD54F;
+            border-radius: 40% 40% 30% 30%;
+            position: relative;
+            box-shadow: inset 0 -5px 0 #F9A825;
+        }
+        .corn::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 5px;
+            width: 35px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50% 50% 0 0;
+            transform: skewX(-5deg);
+        }
+        .corn::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: -5px;
+            width: 55px;
+            height: 20px;
+            background: transparent;
+            border-bottom: 3px dashed #F9A825;
+            border-radius: 50%;
+        }
+        /* 玉米粒效果 */
+        .corn .kernel1, .corn .kernel2, .corn .kernel3 {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #FFA000;
+            border-radius: 50%;
+        }
+        .corn .kernel1 { top: 20px; left: 12px; }
+        .corn .kernel2 { top: 35px; left: 18px; }
+        .corn .kernel3 { top: 25px; left: 25px; }
+
+        /* 洋葱：紫色圆球 + 绿色葱叶 */
+        .onion {
+            width: 55px;
+            height: 60px;
+            background: #BA68C8;
+            border-radius: 50% 50% 45% 45%;
+            position: relative;
+            box-shadow: 0 6px 0 #7B1FA2;
+        }
+        .onion::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 15px;
+            width: 20px;
+            height: 25px;
+            background: #4CAF50;
+            border-radius: 60% 20% 20% 60%;
+            transform: rotate(-10deg);
+        }
+        .onion::after {
+            content: '';
+            position: absolute;
+            top: -22px;
+            left: 25px;
+            width: 18px;
+            height: 22px;
+            background: #4CAF50;
+            border-radius: 20% 60% 60% 20%;
+            transform: rotate(15deg);
+        }
+
+        /* 蘑菇：红伞 + 白柄 */
+        .mushroom {
+            width: 55px;
+            height: 55px;
+            background: #F44336;
+            border-radius: 50% 50% 45% 45%;
+            position: relative;
+            box-shadow: 0 6px 0 #B71C1C;
+        }
+        .mushroom::before {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 20px;
+            width: 20px;
+            height: 25px;
+            background: #FFF9C4;
+            border-radius: 20% 20% 30% 30%;
+            box-shadow: inset 0 -3px 0 #E0E0E0;
+        }
+        /* 蘑菇斑点 */
+        .mushroom .spot1, .mushroom .spot2 {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.6;
+        }
+        .mushroom .spot1 { top: 15px; left: 12px; }
+        .mushroom .spot2 { top: 25px; right: 12px; }
+
+        /* 辣椒：红色细长辣椒 */
+        .chili {
+            width: 25px;
+            height: 70px;
+            background: #F44336;
+            border-radius: 40% 40% 30% 30%;
+            position: relative;
+            transform: rotate(10deg);
+            box-shadow: 0 6px 0 #B71C1C;
+        }
+        .chili::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 5px;
+            width: 15px;
+            height: 15px;
+            background: #4CAF50;
+            border-radius: 50% 50% 0 0;
+            transform: rotate(5deg);
+        }
+        .chili::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 8px;
+            width: 8px;
+            height: 12px;
+            background: #B71C1C;
+            border-radius: 2px;
+        }
+        .orange {
+            width: 70px;
+            height: 70px;
+            background: #FF9800;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 8px 0 #E65100;
+        }
+        .orange::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            width: 30px;
+            height: 25px;
+            background: #4CAF50;
+            border-radius: 60% 40% 30% 70%;
+            transform: rotate(-5deg);
+        }
+        .orange::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 35px;
+            width: 6px;
+            height: 15px;
+            background: #2E7D32;
+            border-radius: 2px;
+            transform: rotate(10deg);
+        }
+
+        /* 西红柿：红色圆形 + 绿色蒂 */
+        .tomato {
+            width: 65px;
+            height: 65px;
+            background: #E53935;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 8px 0 #B71C1C;
+        }
+        .tomato::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            width: 25px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50% 50% 20% 20%;
+            transform: rotate(-5deg);
+        }
+        .tomato::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 30px;
+            width: 4px;
+            height: 12px;
+            background: #2E7D32;
+            border-radius: 2px;
+            transform: rotate(5deg);
+        }
+
+        /* 胡萝卜：橙色锥体 + 绿叶 */
+        .carrot {
+            width: 35px;
+            height: 75px;
+            background: #FF9800;
+            border-radius: 40% 40% 30% 30%;
+            position: relative;
+            transform: rotate(5deg);
+        }
+        .carrot::before {
+            content: '';
+            position: absolute;
+            top: -18px;
+            left: 5px;
+            width: 25px;
+            height: 25px;
+            background: #4CAF50;
+            border-radius: 80% 0 50% 20%;
+            transform: rotate(-20deg);
+        }
+        .carrot::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 15px;
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 0 80% 20% 50%;
+            transform: rotate(30deg);
+        }
+
+        /* 茄子：紫色椭圆 + 绿色蒂 */
+        .eggplant {
+            width: 55px;
+            height: 80px;
+            background: #8E24AA;
+            border-radius: 45% 45% 40% 40%;
+            position: relative;
+            transform: rotate(-3deg);
+        }
+        .eggplant::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            width: 18px;
+            height: 18px;
+            background: #4CAF50;
+            border-radius: 50% 50% 0 0;
+            transform: rotate(5deg);
+        }
+        .eggplant::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 25px;
+            width: 4px;
+            height: 12px;
+            background: #2E7D32;
+            border-radius: 2px;
+        }
+
+        /* 小萝卜：粉红圆球 + 绿叶 */
+        .radish {
+            width: 55px;
+            height: 55px;
+            background: #F06292;
+            border-radius: 50% 50% 40% 40%;
+            position: relative;
+        }
+        .radish::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 15px;
+            width: 25px;
+            height: 25px;
+            background: #4CAF50;
+            border-radius: 50% 50% 0 0;
+            transform: rotate(5deg);
+        }
+        .radish::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 20px;
+            width: 8px;
+            height: 20px;
+            background: #F8BBD0;
+            border-radius: 2px;
+            transform: rotate(5deg);
+            box-shadow: 10px 0 #F8BBD0;
+        }
+
+        /* ---------- 登录卡片 (置于顶层) ---------- */
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border-radius: 40px;
+            padding: 2.5rem 2.8rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.3);
+            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.5);
+            animation: cardFadeIn 0.6s ease;
+            position: relative;
+        }
+
+        @keyframes cardFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .login-header {
+            text-align: flex-end;
+            margin-bottom: 2rem;
+        }
+        .login-header h2 {
+            font-size: 2rem;
+            color: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 5%;
+            gap: 10px;
+            font-weight: 600;
+        }
+        .login-header p {
+            color: #795548;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #5D4037;
+            font-weight: 500;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            border: 2px solid #E0E0E0;
+            border-radius: 40px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: white;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 4px rgba(76,175,80,0.2);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #4CAF50, #009688);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 20px rgba(0,150,136,0.4);
+        }
+        .btn-login:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 28px rgba(0,150,136,0.6);
+        }
+
+        .error-message {
+            background: #FFEBEE;
+            color: #D32F2F;
+            padding: 0.8rem 1rem;
+            border-radius: 40px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            text-align: center;
+            border-left: 4px solid #F44336;
+        }
+
+        .demo-tip {
+            text-align: center;
+            margin-top: 2rem;
+            color: #9E9E9E;
+            font-size: 0.9rem;
+        }
+        .demo-tip strong {
+            background: #F1F8E9;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <!-- 漂浮蔬菜园地 (所有蔬菜都可以互动) -->
+    <!-- 青椒 -->
+    <div class="veg-item bellpepper" style="top: 30%; left: 5%; animation-delay: 0.2s;"></div>
+
+    <!-- 南瓜（注意：南瓜内部有额外元素.ridge1/.ridge2） -->
+    <div class="veg-item pumpkin" style="top: 80%; left: 18%; animation-delay: 1.5s;">
+        <div class="ridge1"></div>
+        <div class="ridge2"></div>
+    </div>
+
+    <!-- 玉米（带玉米粒元素） -->
+    <div class="veg-item corn" style="top: 12%; right: 15%; animation-delay: 0.8s;">
+        <div class="kernel1"></div>
+        <div class="kernel2"></div>
+        <div class="kernel3"></div>
+    </div>
+
+    <!-- 洋葱 -->
+    <div class="veg-item onion" style="bottom: 25%; left: 35%; animation-delay: 2.0s;"></div>
+
+    <!-- 蘑菇（带斑点） -->
+    <div class="veg-item mushroom" style="top: 55%; right: 8%; animation-delay: 1.2s;">
+        <div class="spot1"></div>
+        <div class="spot2"></div>
+    </div>
+
+<!-- 辣椒 -->
+<div class="veg-item chili" style="bottom: 15%; right: 30%; animation-delay: 2.5s;"></div>
+    <div class="veg-garden">
+        <!-- 橘子1 -->
+        <div class="veg-item orange" style="top: 15%; left: 8%; animation-delay: 0s;"></div>
+        <!-- 西红柿1 -->
+        <div class="veg-item tomato" style="top: 70%; left: 12%; animation-delay: 1.2s; width: 60px; height: 60px;"></div>
+        <!-- 胡萝卜 -->
+        <div class="veg-item carrot" style="top: 25%; right: 10%; animation-delay: 0.5s;"></div>
+        <!-- 茄子 -->
+        <div class="veg-item eggplant" style="bottom: 20%; right: 18%; animation-delay: 2.3s;"></div>
+        <!-- 小萝卜 -->
+        <div class="veg-item radish" style="top: 45%; left: 20%; animation-delay: 1.8s;"></div>
+        <!-- 橘子2 (加一个小的) -->
+        <div class="veg-item orange" style="bottom: 10%; left: 25%; width: 50px; height: 50px; animation-delay: 2.7s;"></div>
+        <!-- 西红柿2 -->
+        <div class="veg-item tomato" style="top: 55%; right: 25%; width: 55px; height: 55px; animation-delay: 0.9s;"></div>
+    </div>
+
+    <!-- 登录卡片 -->
+    <div class="login-card">
+        <div class="login-header">
+            <h2>
+                <span>🌱</span> 欢迎回到农场<span>🌽</span>
+            </h2>
+            <p>登录您的农价天眼</p>
+        </div>
+
+        <!-- 错误提示 (由Flask传入) -->
+        {% if error %}
+            <div class="error-message">
+                <span>⚠️</span> {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="input-group">
+                <label>👤 用户名</label>
+                <input type="text" name="username" placeholder="例如：admin" required autofocus>
+            </div>
+            <div class="input-group">
+                <label>🔒 密码</label>
+                <input type="password" name="password" placeholder="••••••" required>
+            </div>
+            <button type="submit" class="btn-login">
+                🚜 进入农场
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1rem;">
+            <small>🌟 鼠标移到蔬菜上，它们会开心地变大哦！</small>
+        </div>
+    </div>
+</body>
+</html>
