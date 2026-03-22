@@ -65,7 +65,7 @@ pip install flask flask-sqlalchemy sqlalchemy pymysql pandas requests beautifuls
 ```bash
 python app.py
 ```
-访问 `http://127.0.0.1:5000`，使用 `admin` / `123456` 登录。
+访问 `http://127.0.0.1:5000`，使用 `admin` / `123456` 登录（可以自己改）。
 
 ### 6. 使用说明  
 
@@ -81,5 +81,3 @@ python app.py
 - **智能化**：基于历史数据计算价格异常和买入得分，辅助决策。  
 - **可视化**：采用 ECharts 提供丰富的图表形式，直观呈现价格规律。  
 - **易用性**：界面清新自然，操作流畅，响应迅速。  
-
-整个项目代码清晰、模块解耦，可作为农业数据监控系统的参考范例，也可进一步扩展支持更多数据源、预测模型等高级功能。
